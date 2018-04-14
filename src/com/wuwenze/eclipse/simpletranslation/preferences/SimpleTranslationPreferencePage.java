@@ -4,6 +4,7 @@ import org.eclipse.jface.preference.*;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.IWorkbench;
 import com.wuwenze.eclipse.simpletranslation.SimpleTranslationActivator;
+import com.wuwenze.eclipse.simpletranslation.pojo.Constants;
 
 /**
  * This class represents a preference page that
@@ -21,12 +22,12 @@ import com.wuwenze.eclipse.simpletranslation.SimpleTranslationActivator;
 
 public class SimpleTranslationPreferencePage
     extends FieldEditorPreferencePage
-    implements IWorkbenchPreferencePage {
+    implements IWorkbenchPreferencePage, Constants {
 
     public SimpleTranslationPreferencePage() {
         super(GRID);
         setPreferenceStore(SimpleTranslationActivator.getDefault().getPreferenceStore());
-        setDescription("Set parameters related to the relevant translation plug-in.\nThe registered link is http://ai.youdao.com/");
+        setDescription(MSG_PREFERENCE_PAGE_DESC);
     }
 
     /**
@@ -36,10 +37,8 @@ public class SimpleTranslationPreferencePage
      * restore itself.
      */
     public void createFieldEditors() {
-        addField(new StringFieldEditor(PreferenceConstants.YOUDAO_APP_KEY, PreferenceConstants.YOUDAO_APP_KEY, getFieldEditorParent()));
-        addField(new StringFieldEditor(PreferenceConstants.YOUDAO_APP_SECRET, PreferenceConstants.YOUDAO_APP_SECRET, getFieldEditorParent()));
-        addField(new ComboFieldEditor(PreferenceConstants.VIEW_LAYOUT_TYPE, PreferenceConstants.VIEW_LAYOUT_TYPE, 
-            new String[][] { { "Transverse", "1" }, { "Longitudinal", "2" } }, getFieldEditorParent()));
+        addField(new StringFieldEditor(KEY_YOUDAO_APP_KEY, KEY_YOUDAO_APP_KEY, getFieldEditorParent()));
+        addField(new StringFieldEditor(KEY_YOUDAO_APP_SECRET, KEY_YOUDAO_APP_SECRET, getFieldEditorParent()));
     }
 
     /*

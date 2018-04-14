@@ -1,45 +1,123 @@
 package com.wuwenze.eclipse.simpletranslation.util;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.alibaba.fastjson.JSON;
+import com.wuwenze.eclipse.simpletranslation.pojo.Constants;
+import com.wuwenze.eclipse.simpletranslation.pojo.YoudaoApiRet;
 
-public final class YoudaoUtil {
-    private final static String youdaoHost = "http://openapi.youdao.com/api";
-    
-    public static String translate(String appKey,String appSecret,String sourceText) {
+public final class YoudaoUtil implements Constants {
+	private static Map<String, String> mErrorCodeMessageMap = new HashMap<>();
+	static {
+		mErrorCodeMessageMap.put("101",	"缺少必填的参数，出现这个情况还可能是et的值和实际加密方式不对应");
+		mErrorCodeMessageMap.put("102",	"不支持的语言类型");
+		mErrorCodeMessageMap.put("103",	"翻译文本过长");
+		mErrorCodeMessageMap.put("104",	"不支持的API类型");
+		mErrorCodeMessageMap.put("105",	"不支持的签名类型");
+		mErrorCodeMessageMap.put("106",	"不支持的响应类型");
+		mErrorCodeMessageMap.put("107",	"不支持的传输加密类型");
+		mErrorCodeMessageMap.put("108",	"appKey无效，注册账号， 登录后台创建应用和实例并完成绑定， 可获得应用ID和密钥等信息，其中应用ID就是appKey（ 注意不是应用密钥）");
+		mErrorCodeMessageMap.put("109",	"batchLog格式不正确");
+		mErrorCodeMessageMap.put("110",	"无相关服务的有效实例");
+		mErrorCodeMessageMap.put("111",	"开发者账号无效");
+		mErrorCodeMessageMap.put("113",	"q不能为空");
+		mErrorCodeMessageMap.put("201",	"解密失败，可能为DES,BASE64,URLDecode的错误");
+		mErrorCodeMessageMap.put("202",	"签名检验失败");
+		mErrorCodeMessageMap.put("203",	"访问IP地址不在可访问IP列表");
+		mErrorCodeMessageMap.put("301",	"辞典查询失败");
+		mErrorCodeMessageMap.put("302",	"翻译查询失败");
+		mErrorCodeMessageMap.put("303",	"服务端的其它异常");
+		mErrorCodeMessageMap.put("401",	"账户已经欠费");
+		mErrorCodeMessageMap.put("411",	"访问频率受限,请稍后访问");
+		mErrorCodeMessageMap.put("412",	"长请求过于频繁，请稍后访问");
+		mErrorCodeMessageMap.put("10086","未知异常，可能是网络请求超时导致");
+	}
+	
+    public static String translate(String appKey,String appSecret,String from, String to, String query) {
         try {
             String salt = String.valueOf(System.currentTimeMillis());
-            String sign = Md5Util.md5(appKey + sourceText + salt + appSecret);
+            String sign = Md5Util.md5(appKey + query + salt + appSecret);
             Map<String, String> params = new HashMap<>();
-            params.put("q", sourceText);
-            params.put("from", "AUTO");
-            params.put("to", "AUTO");
+            params.put("q", query);
+            params.put("from", from);
+            params.put("to", to);
             params.put("appKey", appKey);
             params.put("salt", salt);
             params.put("sign", sign);
-            return HttpUtil.get(youdaoHost, params);
+//            System.out.println("translate prams: " + params);
+            String retJsonString = HttpUtil.get(YOUDAO_API_HOST, params);
+//            System.out.println("translate result: " + retJsonString);
+            if (!StringUtil.isEmpty(retJsonString)) {
+            	YoudaoApiRet ret = JSON.parseObject(retJsonString, YoudaoApiRet.class);
+            	if ("0".equals(ret.getErrorCode())) {
+            		return analysisResult(ret);
+            	}
+            	return mErrorCodeMessageMap.get(ret.getErrorCode());
+            }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        return null;
+        return mErrorCodeMessageMap.get("10086");
     }
 
-    public static String analysis(String translate) {
-        List<String> translation = new ArrayList<String>();
-        Map<String, Object> map = JSON.parseObject(translate, Map.class);
-        if ("0".equals(map.get("errorCode").toString())) {
-            translation = JSON.parseObject(map.get("translation").toString(), List.class);
-        }
-
-        StringBuffer stringBuffer = new StringBuffer();
-        for (Object o : translation) {
-            stringBuffer.append(o).append("\r");
-        }
-        return stringBuffer.length() > 0 ? stringBuffer.toString() : "Please check YOUDAO_APP_KEY / YOUDAO_APP_SECRET\n[Window -> Preference -> SimpleTranslation]";
-    }
+	private static String analysisResult(YoudaoApiRet ret) {
+		StringBuilder stringBuilder = new StringBuilder();
+		// 翻译结果
+		stringBuilder.append("[翻译结果]\n");
+		AtomicInteger translationCount = new AtomicInteger(1);
+		ret.getTranslation().forEach((t) -> {
+			int translationSize = ret.getTranslation().size();
+			if (translationSize > 1) {
+				stringBuilder.append(translationCount).append(": ");
+			}
+			stringBuilder.append(t).append("\n");
+			translationCount.getAndIncrement();
+		});
+		
+		if (null != ret.getBasic() && null != ret.getBasic().getExplains()) {
+			stringBuilder.append("\n");
+			// 词典
+			stringBuilder.append("[有道词典]\n");
+			AtomicInteger explainsCount = new AtomicInteger(1);
+			ret.getBasic().getExplains().forEach((e) -> {
+				int explainsSize = ret.getBasic().getExplains().size();
+				if (explainsSize > 1) {
+					stringBuilder.append(explainsCount).append(": ");
+				}
+				stringBuilder.append(e).append("\n");
+				explainsCount.getAndIncrement();
+			});
+		}
+		
+		if (null != ret.getWeb() && !ret.getWeb().isEmpty()) {
+			stringBuilder.append("\n");
+			// 网络释义
+			stringBuilder.append("[网络释义]\n");
+			ret.getWeb().forEach((web) -> {
+				stringBuilder.append(web.getKey()).append(":\t");
+				AtomicInteger valueCount = new AtomicInteger(0);
+				web.getValue().forEach((value) -> {
+					stringBuilder.append(value).append(";");
+					valueCount.getAndIncrement();
+				});
+				if (valueCount.get() > 0) {
+					stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+				}
+				stringBuilder.append("\n");
+			});
+		}
+		return stringBuilder.toString();
+	}
+	
+	public static void main(String[] args) {
+		String appKey = "";
+		String appSecret = "";
+		String from = "auto";
+		String to = "auto";
+		String query = "世界";
+		System.out.println(translate(appKey, appSecret, from, to, query));
+	}
 }
