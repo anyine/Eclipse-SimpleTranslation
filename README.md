@@ -2,7 +2,7 @@
 > 基于有道智云API实现的Eclipse翻译小插件
 
 ## Preview
-![image](https://raw.githubusercontent.com/wuwz/Eclipse-SimpleTranslation/master/example.gif)
+![image](https://raw.githubusercontent.com/wuwz/Eclipse-SimpleTranslation/master/example_new.gif)
 
 ## Environment
 JDK: 1.8+
