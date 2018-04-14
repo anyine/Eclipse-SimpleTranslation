@@ -97,10 +97,13 @@ public final class YoudaoUtil implements Constants {
 			// ÍøÂçÊÍÒå
 			stringBuilder.append("[ÍøÂçÊÍÒå]\n");
 			ret.getWeb().forEach((web) -> {
-				stringBuilder.append(web.getKey()).append(":\t");
+				stringBuilder.append(web.getKey()).append(" - ");
 				AtomicInteger valueCount = new AtomicInteger(0);
 				web.getValue().forEach((value) -> {
 					stringBuilder.append(value).append(";");
+					if (valueCount.get() != (web.getValue().size() - 1)) {
+						stringBuilder.append(" ");
+					}
 					valueCount.getAndIncrement();
 				});
 				if (valueCount.get() > 0) {
