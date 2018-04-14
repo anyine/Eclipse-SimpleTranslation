@@ -87,7 +87,7 @@ public class TranslationParts implements Constants, ModifyListener {
 		cboTranslationModelTo.setToolTipText(TOOLTIP_cboTranslationModelTo);
 		cboTranslationModelTo.setItems(getTranslationModelItems());
 		cboTranslationModelTo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1));
-		cboTranslationModelTo.select(3);
+		cboTranslationModelTo.select(0);
 
 		Button btnTranslation = new Button(parent, SWT.FLAT);
 		btnTranslation.addMouseListener(new MouseAdapter() {
