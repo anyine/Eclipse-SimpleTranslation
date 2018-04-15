@@ -24,5 +24,4 @@
             class="com.wuwenze.eclipse.simpletranslation.preferences.PreferenceInitializer">
       </initializer>
    </extension>
-
 </plugin>

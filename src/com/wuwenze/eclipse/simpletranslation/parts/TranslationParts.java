@@ -46,31 +46,7 @@ public class TranslationParts implements Constants, ModifyListener {
 		mTranslationModelDataSource.add(new HashMap() {{put("pt", "ÆÏÌÑÑÀÎÄ");}});
 		mTranslationModelDataSource.add(new HashMap() {{put("es", "Î÷°àÑÀÎÄ");}});
 	}
-	private static String[] mTranslationModelItems = null;
-	private String[] getTranslationModelItems() {
-		if (null == mTranslationModelItems) {
-			List<String> textList = new ArrayList<>();
-			mTranslationModelDataSource.forEach((map) -> {
-				map.keySet().forEach((key) -> {
-					textList.add(map.get(key));
-				});
-			});
-			mTranslationModelItems = textList.toArray(new String[textList.size()]);
-		}
-		return mTranslationModelItems;
-	}
-
-	private String getTranslationMode(String text) {
-		for (Map<String, String> map : mTranslationModelDataSource) {
-			for (String key : map.keySet()) {
-				if (map.get(key).equals(text)) {
-					return key;
-				}
-			}
-		}
-		return "auto";
-	}
-
+	
 	@PostConstruct
 	public void createControls(Composite parent) {
 		parent.setLayout(new GridLayout(4, true));
@@ -132,10 +108,6 @@ public class TranslationParts implements Constants, ModifyListener {
 		if (!StringUtil.isEmpty(query)) {
 			String appKey = preferenceStore.getString(KEY_YOUDAO_APP_KEY);
 			String appSecret = preferenceStore.getString(KEY_YOUDAO_APP_SECRET);
-			if (StringUtil.isEmpty(appKey) || StringUtil.isEmpty(appKey)) {
-				textResult.setText(MSG_NO_APP_KEY_AND_SECRET);
-				return;
-			}
 			String from = getTranslationMode(cboTranslationModelFrom.getText());
 			String to = getTranslationMode(cboTranslationModelTo.getText());
 			textResult.setText(YoudaoUtil.translate(appKey, appSecret, from, to, query));
@@ -147,5 +119,30 @@ public class TranslationParts implements Constants, ModifyListener {
 		if (null != btnCheckAuto && btnCheckAuto.getSelection()) {
 			btnCheckAuto.getDisplay().asyncExec(() -> doTranslationAction());
 		}
+	}
+	
+	private static String[] mTranslationModelItems = null;
+	private String[] getTranslationModelItems() {
+		if (null == mTranslationModelItems) {
+			List<String> textList = new ArrayList<>();
+			mTranslationModelDataSource.forEach((map) -> {
+				map.keySet().forEach((key) -> {
+					textList.add(map.get(key));
+				});
+			});
+			mTranslationModelItems = textList.toArray(new String[textList.size()]);
+		}
+		return mTranslationModelItems;
+	}
+
+	private String getTranslationMode(String text) {
+		for (Map<String, String> map : mTranslationModelDataSource) {
+			for (String key : map.keySet()) {
+				if (map.get(key).equals(text)) {
+					return key;
+				}
+			}
+		}
+		return "auto";
 	}
 }

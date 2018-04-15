@@ -1,6 +1,5 @@
 package com.wuwenze.eclipse.simpletranslation.util;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,10 +32,14 @@ public final class YoudaoUtil implements Constants {
 		mErrorCodeMessageMap.put("401",	"账户已经欠费");
 		mErrorCodeMessageMap.put("411",	"访问频率受限,请稍后访问");
 		mErrorCodeMessageMap.put("412",	"长请求过于频繁，请稍后访问");
-		mErrorCodeMessageMap.put("10086","未知异常，可能是网络请求超时导致");
+		mErrorCodeMessageMap.put("10086", MSG_API_NO_RESPONSE);
+		mErrorCodeMessageMap.put("10010", MSG_NO_APP_KEY_AND_SECRET);
 	}
 	
     public static String translate(String appKey,String appSecret,String from, String to, String query) {
+    	if (StringUtil.isEmpty(appKey) || StringUtil.isEmpty(appSecret)) {
+    		return errorResult("10010");
+    	}
         try {
             String salt = String.valueOf(System.currentTimeMillis());
             String sign = Md5Util.md5(appKey + query + salt + appSecret);
@@ -47,80 +50,92 @@ public final class YoudaoUtil implements Constants {
             params.put("appKey", appKey);
             params.put("salt", salt);
             params.put("sign", sign);
-//            System.out.println("translate prams: " + params);
             String retJsonString = HttpUtil.get(YOUDAO_API_HOST, params);
-//            System.out.println("translate result: " + retJsonString);
             if (!StringUtil.isEmpty(retJsonString)) {
             	YoudaoApiRet ret = JSON.parseObject(retJsonString, YoudaoApiRet.class);
             	if ("0".equals(ret.getErrorCode())) {
             		return analysisResult(ret);
             	}
-            	return mErrorCodeMessageMap.get(ret.getErrorCode());
+            	return errorResult(ret.getErrorCode());
             }
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            return errorResult(null, e.getMessage());
         }
-        return mErrorCodeMessageMap.get("10086");
+        return errorResult("10086");
+    }
+    
+    private static String errorResult(String errorCode) {
+    	return errorResult(errorCode, null);
+    }
+    
+    private static String errorResult(String errorCode, String defaultMsg) {
+    	return new StringBuilder()
+    			.append("[出现问题]\n")
+    			.append(StringUtil.isEmpty(defaultMsg) ? mErrorCodeMessageMap.getOrDefault(errorCode, "Unknown error") : defaultMsg)
+    			.toString();
     }
 
 	private static String analysisResult(YoudaoApiRet ret) {
+		boolean haveWeb = null != ret.getWeb() && !ret.getWeb().isEmpty();
+		boolean haveBasic = null != ret.getBasic() && null != ret.getBasic().getExplains() && !ret.getBasic().getExplains().isEmpty();
+		
 		StringBuilder stringBuilder = new StringBuilder();
 		// 翻译结果
-		stringBuilder.append("[翻译结果]\n");
+		if (haveBasic || haveWeb) {
+			stringBuilder.append("[翻译结果]\n");
+		}
+		int translationSize = ret.getTranslation().size();
 		AtomicInteger translationCount = new AtomicInteger(1);
 		ret.getTranslation().forEach((t) -> {
-			int translationSize = ret.getTranslation().size();
-			if (translationSize > 1) {
-				stringBuilder.append(translationCount).append(": ");
+			stringBuilder.append(t);
+			if (translationSize > 1 && translationCount.get() != translationSize) {
+				stringBuilder.append("\n");
 			}
-			stringBuilder.append(t).append("\n");
 			translationCount.getAndIncrement();
 		});
 		
-		if (null != ret.getBasic() && null != ret.getBasic().getExplains()) {
-			stringBuilder.append("\n");
+		if (haveBasic) {
 			// 词典
-			stringBuilder.append("[有道词典]\n");
+			stringBuilder.append("\n\n[有道词典]\n");
 			AtomicInteger explainsCount = new AtomicInteger(1);
+			int explainsSize = ret.getBasic().getExplains().size();
 			ret.getBasic().getExplains().forEach((e) -> {
-				int explainsSize = ret.getBasic().getExplains().size();
-				if (explainsSize > 1) {
-					stringBuilder.append(explainsCount).append(": ");
+				stringBuilder.append(e);
+				if (explainsSize > 1 && explainsCount.get() != explainsSize) {
+					stringBuilder.append("\n");
 				}
-				stringBuilder.append(e).append("\n");
 				explainsCount.getAndIncrement();
 			});
 		}
 		
-		if (null != ret.getWeb() && !ret.getWeb().isEmpty()) {
-			stringBuilder.append("\n");
+		if (haveWeb) {
 			// 网络释义
-			stringBuilder.append("[网络释义]\n");
+			stringBuilder.append("\n\n[网络释义]\n");
+			int webSize = ret.getWeb().size();
 			ret.getWeb().forEach((web) -> {
 				stringBuilder.append(web.getKey()).append(" - ");
 				AtomicInteger valueCount = new AtomicInteger(0);
 				web.getValue().forEach((value) -> {
-					stringBuilder.append(value).append(";");
-					if (valueCount.get() != (web.getValue().size() - 1)) {
-						stringBuilder.append(" ");
-					}
+					stringBuilder.append(value).append("；");
 					valueCount.getAndIncrement();
 				});
 				if (valueCount.get() > 0) {
 					stringBuilder.deleteCharAt(stringBuilder.length() - 1);
 				}
-				stringBuilder.append("\n");
+				if (webSize > 1) {
+					stringBuilder.append("\n");
+				}
 			});
 		}
 		return stringBuilder.toString();
 	}
 	
 	public static void main(String[] args) {
-		String appKey = "";
-		String appSecret = "";
+		String appKey = "0fb73659748c4ae0";
+		String appSecret = "3qzukTjwWSTnthTwHU6hptGlZEeX0Oox";
 		String from = "auto";
 		String to = "auto";
-		String query = "世界";
+		String query = "word";
 		System.out.println(translate(appKey, appSecret, from, to, query));
 	}
 }

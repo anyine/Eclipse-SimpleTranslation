@@ -8,12 +8,11 @@ public interface Constants {
 	
 	
 	String MSG_PREFERENCE_PAGE_DESC = "Set parameters related to the relevant translation plug-in.\nThe registered link is http://ai.youdao.com/";
-	String MSG_NO_APP_KEY_AND_SECRET = "Please setup YOUDAO_APP_KEY / YOUDAO_APP_SECRET\n[Window -> Preference -> SimpleTranslation]";
+	String MSG_NO_APP_KEY_AND_SECRET = "请先配置 YOUDAO_APP_KEY和YOUDAO_APP_SECRET\n详见[Window -> Preference -> SimpleTranslation]";
+	String MSG_API_NO_RESPONSE = "未知异常，可能是网络请求超时导致";
 	String TEXT_btnTranslation = "\u6709\u9053\u7FFB\u8BD1";
 	String TEXT_cboTranslationModel = "\u81EA\u52A8\u68C0\u6D4B";
 	String TEXT_btnCheckAuto = "\u5B9E\u65F6\u7FFB\u8BD1";
 	String TOOLTIP_cboTranslationModelFrom = "\u6E90\u8BED\u8A00";
 	String TOOLTIP_cboTranslationModelTo = "\u76EE\u6807\u8BED\u8A00";
-	
-	
 }
